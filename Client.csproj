@@ -7,11 +7,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="src\components\myfirst.ts" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="wwwroot\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <TypeScriptCompile Include="src\components\myfirst\myfirst.ts" />
   </ItemGroup>
 
   <Target Name="WebpackPublish" AfterTargets="BeforePublish">
