@@ -1,15 +1,18 @@
 ﻿{
   "compilerOptions": {
-    "target": "es6",
-    "module": "es6",
+    "target": "es5",
+    "module": "esnext",
     "moduleResolution": "node",
-    "lib": [ "es6", "dom" ],
+    "lib": [ "es2017", "dom" ],
     "importHelpers": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "sourceMap": true,
-    "strict": true
   },
-
+  "include": [
+    "./src/**/*.ts",
+    "./test/**/*.ts",
+    "./custom_typings/**/*.d.ts"
+  ],
   "compileOnSave": false
 }
