@@ -1,5 +1,6 @@
 ﻿using Client.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 
 namespace Client
 {
@@ -30,7 +31,8 @@ namespace Client
             modelBuilder.Entity<ContactPerson>().HasData(new ContactPerson
             {
                 Id = 1,
-                Name = "John Doe"
+                Name = "John Doe",
+                CustomerId = 1
             });
         }
     }

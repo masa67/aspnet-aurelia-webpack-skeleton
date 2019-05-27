@@ -1,5 +1,6 @@
 ﻿using Client.Models;
 using Client.Repository;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -16,12 +17,13 @@ namespace Client.DataManager
 
         public IEnumerable<Customer> GetAll()
         {
-            return _customerContext.Customers.ToList();
+            return _customerContext.Customers.Include(c => c.ContactPersons).ToList();
         }
 
         public Customer Get(long id)
         {
             return _customerContext.Customers
+                .Include(c => c.ContactPersons)
                 .FirstOrDefault(e => e.Id == id);
         }
 

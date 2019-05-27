@@ -22,7 +22,9 @@ namespace Client
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc();
+            services
+                .AddMvc()
+                .AddJsonOptions(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
 
             services.AddDbContext<CustomerContext>(options => options.UseSqlServer(Configuration["ConnectionStrings:Default"]));
             services.AddScoped<IDataRepository<Customer>, CustomerManager>();
