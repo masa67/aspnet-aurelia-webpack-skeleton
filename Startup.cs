@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Client.DataManager;
+using Client.Models;
+using Client.Repository;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SpaServices.Webpack;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +25,8 @@ namespace Client
             services.AddMvc();
 
             services.AddDbContext<CustomerContext>(options => options.UseSqlServer(Configuration["ConnectionStrings:Default"]));
+            services.AddScoped<IDataRepository<Customer>, CustomerManager>();
+            services.AddScoped<IDataRepository<ContactPerson>, ContactPersonManager>();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
