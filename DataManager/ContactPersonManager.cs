@@ -22,7 +22,7 @@ namespace Client.DataManager
         public ContactPerson Get(long id)
         {
             return _customerContext.ContactPersons
-                  .FirstOrDefault(e => e.ContactPersonId == id);
+                  .FirstOrDefault(e => e.Id == id);
         }
 
         public void Add(ContactPerson entity)

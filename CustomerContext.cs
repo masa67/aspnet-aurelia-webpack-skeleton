@@ -17,19 +17,19 @@ namespace Client
         {
             modelBuilder.Entity<Customer>().HasData(new Customer
             {
-                CustomerId = 1,
+                Id = 1,
                 Name = "Company1",
                 NameExtension = "Company1 extension"
             }, new Customer
             {
-                CustomerId = 2,
+                Id = 2,
                 Name = "Company2",
                 NameExtension = "Company2 extension"
             });
 
             modelBuilder.Entity<ContactPerson>().HasData(new ContactPerson
             {
-                ContactPersonId = 1,
+                Id = 1,
                 Name = "John Doe"
             });
         }
