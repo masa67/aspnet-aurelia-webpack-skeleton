@@ -45,9 +45,7 @@ namespace UnitTest
             var queryString = "[ { \"operator\":\"AND\", \"operands\":[ { \"property\":\"Name\", \"operator\":\"Contains\", \"value\":\"John\" }, { \"operator\":\"OR\", \"operands\":[ { \"property\":\"Phone\", \"operator\":\"Contains\", \"value\":\"123\" }, { \"property\":\"PhoneMobile\", \"operator\":\"Contains\", \"value\":\"123\" } ] } ] } ]";
 
             var query = QueryHelper.GetQuery(queryString);
-            var queryExt = new QueryExtensions<TestClass>();
-
-            var predicate = queryExt.GenerateWhere(query.Query);
+            var predicate = QueryHelper.GenerateWhere<TestClass>(query.Query);
 
             var result = queryableTestObjects.Where(predicate).ToList();
 

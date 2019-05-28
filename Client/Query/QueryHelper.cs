@@ -1,11 +1,10 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.Linq.Expressions;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Linq.Expressions;
 using System.Reflection;
-using System.Collections;
 
 namespace Client.Query
 {
@@ -14,16 +13,6 @@ namespace Client.Query
         public bool Success { get; set; }
         public string ErrorMessage { get; set; }
         public Query Query { get; set; }
-    }
-
-    public class Query
-    {
-        public List<QueryParameterBase> Parameters { get; set; }
-
-        public Query()
-        {
-            Parameters = new List<QueryParameterBase>();
-        }
     }
 
     public static class QueryHelper
@@ -207,21 +196,18 @@ namespace Client.Query
 
             return new FieldParameter(prop, val, fieldOp);
         }
-    }
 
-    public class QueryExtensions<TEntity>
-    {
-        public IQueryable<TEntity> AddQueryParameters(IQueryable<TEntity> q, Query query)
+        public static IQueryable<TEntity> AddQueryParameters<TEntity>(IQueryable<TEntity> q, Query query)
         {
             if (query.Parameters != null)
             {
-                return q.Where(GenerateWhere(query));
+                return q.Where(GenerateWhere<TEntity>(query));
             }
 
             return q;
         }
 
-        public Expression<Func<TEntity, bool>> GenerateWhere(Query query)
+        public static Expression<Func<TEntity, bool>> GenerateWhere<TEntity>(Query query)
         {
             var predicate = PredicateBuilder.True<TEntity>();
 
@@ -229,24 +215,24 @@ namespace Client.Query
             {
                 foreach (QueryParameterBase queryParam in query.Parameters)
                 {
-                    predicate = predicate.And(GenerateFilter(queryParam));
+                    predicate = predicate.And(GenerateFilter<TEntity>(queryParam));
                 }
             }
 
             return predicate;
         }
 
-        protected virtual Expression<Func<TEntity, bool>> GenerateFilter(QueryParameterBase queryParam)
+        private static Expression<Func<TEntity, bool>> GenerateFilter<TEntity>(QueryParameterBase queryParam)
         {
             Expression<Func<TEntity, bool>> ret;
 
             if (queryParam is FieldParameter)
             {
-                ret = GenerateFieldFilter(queryParam as FieldParameter);
+                ret = GenerateFieldFilter<TEntity>(queryParam as FieldParameter);
             }
             else if (queryParam is LogicalParameter)
             {
-                ret = GenerateLogicalFilter(queryParam as LogicalParameter);
+                ret = GenerateLogicalFilter<TEntity>(queryParam as LogicalParameter);
             }
             else
                 throw new Exception(message: $"Internal error, invalid type of query parameter.");
@@ -254,7 +240,7 @@ namespace Client.Query
             return ret;
         }
 
-        protected virtual Expression<Func<TEntity, bool>> GenerateFieldFilter(FieldParameter fieldParameter)
+        private static Expression<Func<TEntity, bool>> GenerateFieldFilter<TEntity>(FieldParameter fieldParameter)
         {
             var property = fieldParameter.Property;
             var propertyValue = fieldParameter.Value;
@@ -451,7 +437,7 @@ namespace Client.Query
             return Expression.Lambda<Func<TEntity, bool>>(expression, parameter);
         }
 
-        protected virtual Expression<Func<TEntity, bool>> GenerateLogicalFilter(LogicalParameter logicalParameter)
+        private static Expression<Func<TEntity, bool>> GenerateLogicalFilter<TEntity>(LogicalParameter logicalParameter)
         {
             Expression<Func<TEntity, bool>> predicate = logicalParameter.Operator == LogicalOperator.AND
                 ? PredicateBuilder.True<TEntity>()
@@ -461,11 +447,11 @@ namespace Client.Query
             {
                 if (logicalParameter.Operator == LogicalOperator.OR)
                 {
-                    predicate = predicate.Or(GenerateFilter(operand));
+                    predicate = predicate.Or(GenerateFilter<TEntity>(operand));
                 }
                 else
                 {
-                    predicate = predicate.And(GenerateFilter(operand));
+                    predicate = predicate.And(GenerateFilter<TEntity>(operand));
                 }
             }
 
