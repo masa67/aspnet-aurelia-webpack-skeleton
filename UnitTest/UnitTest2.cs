@@ -15,20 +15,6 @@ namespace UnitTest
 
     public class Test2
     {
-        /*
-        private generatePredicate()
-        {
-            var predicate = PredicateBuilder.False<TestClass>();
-
-            predicate.Or(t => t.Phone.Contains("123"));
-            predicate.Or(t => t.PhoneMobile.Contains("123"));
-
-            var predicate2 = PredicateBuilder.True<TestClass>();
-            predicate.And(predicate);
-            predicate.And
-        }
-        */
-
         [Test]
         public void Test1()
         {
