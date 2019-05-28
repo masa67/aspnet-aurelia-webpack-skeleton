@@ -15,7 +15,7 @@ namespace Tests
         {
             var queryString = "[ { \"property\":\"name\", \"operator\":\"Contains\", \"value\":\"As. Oy\" }, { \"property\":\"phone\", \"operator\":\"Contains\", \"value\":\"123\" } ]";
 
-            var result = Query.GetQuery(queryString);
+            var result = QueryHelper.GetQuery(queryString);
 
             Assert.IsTrue(result.Success);
 
@@ -27,7 +27,7 @@ namespace Tests
         {
             var queryString = "[ { \"operator\":\"OR\", \"operands\":[ { \"property\":\"phone\", \"operator\":\"Contains\", \"value\":\"123\" }, { \"property\":\"phoneMobile\", \"operator\":\"Contains\", \"value\":\"123\" } ] } ]";
 
-            var result = Query.GetQuery(queryString);
+            var result = QueryHelper.GetQuery(queryString);
 
             Assert.IsTrue(result.Success);
 
@@ -39,7 +39,7 @@ namespace Tests
         {
             var queryString = "[ { \"operator\":\"AND\", \"operands\":[ { \"property\":\"name\", \"operator\":\"Contains\", \"value\":\"Pekka\" }, { \"operator\":\"OR\", \"operands\":[ { \"property\":\"phone\", \"operator\":\"Contains\", \"value\":\"123\" }, { \"property\":\"phoneMobile\", \"operator\":\"Contains\", \"value\":\"123\" } ] } ] } ]";
 
-            var result = Query.GetQuery(queryString);
+            var result = QueryHelper.GetQuery(queryString);
 
             Assert.IsTrue(result.Success);
 

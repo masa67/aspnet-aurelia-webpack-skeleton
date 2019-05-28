@@ -2,7 +2,7 @@
 
 namespace Client.Query
 {
-    class LogicalParameter : QueryParameterBase
+    public class LogicalParameter : QueryParameterBase
     {
         public LogicalOperator Operator { get; set; }
 

@@ -1,6 +1,11 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Linq.Expressions;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Reflection;
+using System.Collections;
 
 namespace Client.Query
 {
@@ -8,13 +13,22 @@ namespace Client.Query
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; }
-        public List<QueryParameterBase> Query { get; set; }
+        public Query Query { get; set; }
     }
 
-    public static class Query
+    public class Query
     {
-        public static List<QueryParameterBase> Parameters { get; set; }
-        private static string ParseError {get; set; }
+        public List<QueryParameterBase> Parameters { get; set; }
+
+        public Query()
+        {
+            Parameters = new List<QueryParameterBase>();
+        }
+    }
+
+    public static class QueryHelper
+    {
+        private static string ParseError { get; set; }
 
         /*
         Examples of queryJson:
@@ -104,7 +118,7 @@ namespace Client.Query
                 return ret;
             }
 
-            ret.Query = new List<QueryParameterBase>();
+            ret.Query = new Query();
             foreach (dynamic queryItem in jsonObject)
             {
                 var parsedItem = ParseQueryItem(queryItem);
@@ -114,7 +128,7 @@ namespace Client.Query
                     return ret;
                 }
 
-                ret.Query.Add(parsedItem);
+                ret.Query.Parameters.Add(parsedItem);
             }
 
             ret.Success = true;
@@ -192,7 +206,270 @@ namespace Client.Query
             }
 
             return new FieldParameter(prop, val, fieldOp);
+        }
+    }
 
+    public class QueryExtensions<TEntity>
+    {
+        public IQueryable<TEntity> AddQueryParameters(IQueryable<TEntity> q, Query query)
+        {
+            if (query.Parameters != null)
+            {
+                return q.Where(GenerateWhere(query));
+            }
+
+            return q;
+        }
+
+        public Expression<Func<TEntity, bool>> GenerateWhere(Query query)
+        {
+            var predicate = PredicateBuilder.True<TEntity>();
+
+            if (query.Parameters != null)
+            {
+                foreach (QueryParameterBase queryParam in query.Parameters)
+                {
+                    predicate = predicate.And(GenerateFilter(queryParam));
+                }
+            }
+
+            return predicate;
+        }
+
+        protected virtual Expression<Func<TEntity, bool>> GenerateFilter(QueryParameterBase queryParam)
+        {
+            Expression<Func<TEntity, bool>> ret;
+
+            if (queryParam is FieldParameter)
+            {
+                ret = GenerateFieldFilter(queryParam as FieldParameter);
+            }
+            else if (queryParam is LogicalParameter)
+            {
+                ret = GenerateLogicalFilter(queryParam as LogicalParameter);
+            }
+            else
+                throw new Exception(message: $"Internal error, invalid type of query parameter.");
+
+            return ret;
+        }
+
+        protected virtual Expression<Func<TEntity, bool>> GenerateFieldFilter(FieldParameter fieldParameter)
+        {
+            var property = fieldParameter.Property;
+            var propertyValue = fieldParameter.Value;
+
+            var entityType = typeof(TEntity);
+
+            Expression expression;
+            var entityProperty = entityType.GetProperty(property, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+
+            if (entityProperty == null)
+            {
+                throw new Exception(message: $"Property '{property}' not found.");
+            }
+
+            var propertyType = entityProperty.PropertyType;
+            var parameter = Expression.Parameter(entityType, "entity");
+
+            if (entityProperty == null)
+            {
+                throw new Exception(message: $"Property '{property}' not found for entity '{entityType.Name}'");
+            }
+
+            // List handling - convert JArray and each JValue to generic list of the correct type
+            var jsonArray = propertyValue as IList;
+            if (jsonArray != null)
+            {
+                var list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(propertyType));
+                foreach (var item in jsonArray)
+                {
+                    var converted = Convert.ChangeType(item, propertyType);
+                    if (converted != null)
+                        list.Add(converted);
+                    else
+                        throw new Exception($"Cannot convert query filter value '{propertyValue}' to List<{propertyType}>");
+                }
+                propertyValue = list;
+            }
+
+            // Guid handling
+            if (propertyType.Equals(typeof(Guid)) && !(propertyValue is Guid))
+            {
+                if (!(propertyValue is IList))
+                {
+                    if (!Guid.TryParse(propertyValue.ToString(), out Guid compareGuid))
+                        throw new Exception($"Cannot convert query filter value '{propertyValue}' to Guid");
+                    propertyValue = compareGuid;
+                }
+            }
+            else if (propertyType.Equals(typeof(DateTime)) && !(propertyValue is DateTime) ||
+                    propertyType.Equals(typeof(DateTime?)) && !(propertyValue is DateTime?))
+            {
+                if (!DateTime.TryParse(propertyValue.ToString(), out DateTime compareDate))
+                    throw new Exception($"Cannot convert query filter value '{propertyValue}' to DateTime");
+                propertyValue = compareDate;
+            }
+
+            // check if the property type is a value type
+            // only value types work
+            if (propertyType.IsValueType || propertyType.Equals(typeof(string)))
+            {
+                switch (fieldParameter.Operator)
+                {
+                    case FieldOperator.Eq:
+                        if (propertyValue is IList)
+                        {
+                            List<Expression> equalExpressions = new List<Expression>();
+
+                            // Create equal expressions from all values in list
+                            foreach (var value in (IList)propertyValue)
+                            {
+                                equalExpressions.Add(Expression.Equal(
+                                    Expression.Property(parameter, entityProperty),
+                                    Expression.Convert(Expression.Constant(value), propertyType)));
+                            }
+
+                            if (!equalExpressions.Any())
+                            {
+                                // Called with empty list. Create expression that equals false.
+                                expression = Expression.Equal(
+                                    Expression.Convert(Expression.Constant(0), typeof(int)),
+                                    Expression.Convert(Expression.Constant(1), typeof(int)));
+                            }
+                            else if (equalExpressions.Count == 1)
+                            {
+                                // Single value converts to equal expression.
+                                expression = equalExpressions.Single();
+                            }
+                            else
+                            {
+                                // Create or-expressions from previously generated equal-expressions
+                                Expression orExpression = equalExpressions.First();
+
+                                for (int i = 1; i < equalExpressions.Count; i++)
+                                {
+                                    orExpression = Expression.OrElse(orExpression, equalExpressions[i]);
+                                }
+
+                                expression = orExpression;
+                            }
+                        }
+                        else
+                        {
+                            expression = Expression.Equal(
+                                Expression.Property(parameter, entityProperty),
+                                Expression.Convert(Expression.Constant(propertyValue), propertyType));
+                        }
+                        break;
+                    case FieldOperator.Gt:
+                        // Expression: entity.Property > value
+                        expression = Expression.GreaterThan(
+                            Expression.Property(parameter, entityProperty),
+                            Expression.Convert(Expression.Constant(propertyValue), propertyType)
+                        );
+                        break;
+                    case FieldOperator.Gte:
+                        // Expression: entity.Property >= value
+                        expression = Expression.GreaterThanOrEqual(
+                            Expression.Property(parameter, entityProperty),
+                            Expression.Convert(Expression.Constant(propertyValue), propertyType)
+                        );
+                        break;
+                    case FieldOperator.Lt:
+                        // Expression: entity.Property < value
+                        expression = Expression.LessThan(
+                            Expression.Property(parameter, entityProperty),
+                            Expression.Convert(Expression.Constant(propertyValue), propertyType)
+                        );
+                        break;
+                    case FieldOperator.Lte:
+                        // Expression: entity.Property <= value
+                        expression = Expression.LessThanOrEqual(
+                            Expression.Property(parameter, entityProperty),
+                            Expression.Convert(Expression.Constant(propertyValue), propertyType)
+                        );
+                        break;
+                    case FieldOperator.Contains:
+                        expression = Expression.GreaterThanOrEqual(
+                        Expression.Call(Expression.Property(parameter, entityProperty),
+                        typeof(String).GetMethod("IndexOf", new Type[] { typeof(String), typeof(StringComparison) }),
+                            new Expression[] {
+                              Expression.Constant(propertyValue.ToString()),
+                              Expression.Constant(StringComparison.OrdinalIgnoreCase)
+                            }
+                          ), Expression.Constant(0));
+                        break;
+                    case FieldOperator.StartsWith:
+                        // Expression: entity.Property starts with value. Ignore case
+                        expression = Expression.Equal(
+                         Expression.Call(Expression.Property(parameter, entityProperty),
+                         typeof(String).GetMethod("StartsWith", new Type[] { typeof(String), typeof(StringComparison) }),
+                             new Expression[] {
+                          Expression.Constant(propertyValue.ToString()),
+                          Expression.Constant(StringComparison.OrdinalIgnoreCase)
+                             }
+                           ), Expression.Constant(true));
+                        break;
+                    case FieldOperator.EndsWith:
+                        // Expression: entity.Property ends with value. Ignore case
+                        expression = Expression.Equal(
+                            Expression.Call(Expression.Property(parameter, entityProperty),
+                            typeof(String).GetMethod("EndsWith", new Type[] { typeof(String), typeof(StringComparison) }),
+                                new Expression[] {
+                                Expression.Constant(propertyValue.ToString()),
+                                Expression.Constant(StringComparison.OrdinalIgnoreCase)
+                                }
+                                ), Expression.Constant(true));
+                        break;
+                    default:
+                        throw new NotImplementedException($"Field operator '{fieldParameter.Operator.ToString()}' is not implemented.");
+                }
+            }
+            // if not, then use the key (entity)
+            else
+            {
+                // get the Id property of entity
+                var idProperty = propertyType.GetProperty("Id");
+
+                if (idProperty == null)
+                {
+                    throw new ArgumentException(string.Format("Could not find Id property from type '{0}'. Only entity properties implementing IEntity interface can be used.", propertyType.FullName));
+                }
+                expression = Expression.Equal(
+                    Expression.Property(
+                        Expression.Property(parameter, entityProperty),
+                        idProperty
+                    ),
+                    Expression.Constant(
+                        idProperty.GetValue(propertyValue),
+                        idProperty.PropertyType
+                    )
+                );
+            }
+
+            return Expression.Lambda<Func<TEntity, bool>>(expression, parameter);
+        }
+
+        protected virtual Expression<Func<TEntity, bool>> GenerateLogicalFilter(LogicalParameter logicalParameter)
+        {
+            Expression<Func<TEntity, bool>> predicate = logicalParameter.Operator == LogicalOperator.AND
+                ? PredicateBuilder.True<TEntity>()
+                : PredicateBuilder.False<TEntity>();
+
+            foreach (var operand in logicalParameter.Operands)
+            {
+                if (logicalParameter.Operator == LogicalOperator.OR)
+                {
+                    predicate = predicate.Or(GenerateFilter(operand));
+                }
+                else
+                {
+                    predicate = predicate.And(GenerateFilter(operand));
+                }
+            }
+
+            return predicate;
         }
     }
 }
