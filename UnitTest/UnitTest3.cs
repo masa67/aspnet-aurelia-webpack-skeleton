@@ -44,13 +44,14 @@ namespace UnitTest
         }
 
         [Test]
+        // Test one-to-many mapping
         public void Test1()
         {
             InitTestObjects();
 
             IQueryable<Customer> queryableTestObjects = testObjects.AsQueryable();
 
-            var queryString = "[ { \"property\":\"contactPersons.Name\", \"operator\":\"Contains\", \"value\":\"Jane\" } ]";
+            var queryString = "[ { \"property\":\"ContactPersons.Name\", \"operator\":\"Contains\", \"value\":\"Jane\" } ]";
 
             var query = QueryHelper.GetQuery(queryString);
 
@@ -58,12 +59,12 @@ namespace UnitTest
             var property1 = Expression.Property(param1, "ContactPersons");
 
             var listItemType = property1.Type.GetProperty("Item").PropertyType;
-            var entityProperty = listItemType.GetProperty("Name");
+            var property2 = listItemType.GetProperty("Name");
 
             var param2 = Expression.Parameter(listItemType, "p");
 
             var call1 = Expression.Call(
-                Expression.Property(param2, entityProperty),
+                Expression.Property(param2, property2),
                 typeof(String).GetMethod("IndexOf", new Type[] { typeof(String), typeof(StringComparison) }),
                     new Expression[] {
                         Expression.Constant("Jane"),
@@ -71,15 +72,14 @@ namespace UnitTest
                     }
             );
 
-            var equality = Expression.GreaterThanOrEqual(call1, Expression.Constant(0));
-
+            var condition = Expression.GreaterThanOrEqual(call1, Expression.Constant(0));
             
             var anyCall = Expression.Call(
                 typeof(Enumerable),
                 nameof(Enumerable.Any),
                 new Type[] { param2.Type },
                 property1,
-                Expression.Lambda(equality, param2)
+                Expression.Lambda(condition, param2)
             );
 
             Expression<Func<Customer, bool>> predicate = Expression.Lambda<Func<Customer, bool>>(anyCall, param1);
