@@ -457,5 +457,28 @@ namespace Client.Query
 
             return predicate;
         }
+
+        public static Expression<Func<TEntity, bool>> GeneratePropertyFilter<TEntity>(string property, string value)
+        {
+            var fields = property.Split(".");
+
+            var param1 = Expression.Parameter(typeof(TEntity), "x");
+            var property1 = Expression.Property(param1, fields[0]);
+
+            var call1 = Expression.Call(
+                Expression.Property(property1, fields[1]),
+                typeof(String).GetMethod("IndexOf", new Type[] { typeof(String), typeof(StringComparison) }),
+                    new Expression[] {
+                        Expression.Constant(value),
+                        Expression.Constant(StringComparison.OrdinalIgnoreCase)
+                    }
+            );
+
+            var condition = Expression.GreaterThanOrEqual(call1, Expression.Constant(0));
+
+            Expression<Func<TEntity, bool>> predicate = Expression.Lambda<Func<TEntity, bool>>(condition, param1);
+
+            return predicate;
+        }
     }
 }

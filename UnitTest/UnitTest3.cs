@@ -71,13 +71,13 @@ namespace UnitTest
 
         [Test]
         // Test one-to-one mapping
-        public void Test1()
+        public void Test31()
         {
             InitTestObjects();
 
             IQueryable<Customer> queryableTestObjects = testObjects.AsQueryable();
 
-            var queryString = "[ { \"property\":\"Address.Name\", \"operator\":\"Contains\", \"value\":\"London\" } ]";
+            var queryString = "[ { \"property\":\"Address.City\", \"operator\":\"Contains\", \"value\":\"London\" } ]";
 
             var query = QueryHelper.GetQuery(queryString);
 
@@ -110,8 +110,34 @@ namespace UnitTest
         }
 
         [Test]
+        // Test one-to-one mapping: same as Test31 except uses some preliminary code from QueryHelper
+        public void Test31B()
+        {
+            InitTestObjects();
+
+            IQueryable<Customer> queryableTestObjects = testObjects.AsQueryable();
+
+            var queryString = "[ { \"property\":\"Address.City\", \"operator\":\"Contains\", \"value\":\"London\" } ]";
+
+            var query = QueryHelper.GetQuery(queryString);
+
+            var predicate = QueryHelper.GeneratePropertyFilter<Customer>("Address.City", "London");
+            //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
+
+            var result = queryableTestObjects.Where(predicate).ToList();
+
+            // The above is the same as this:
+            // var result = queryableTestObjects.Where(o => o.Address.City.Contains("London")).ToList();
+
+            Assert.IsTrue(result.Count == 1);
+            Assert.IsTrue(result[0].Name == "Company1");
+
+            Assert.Pass();
+        }
+
+        [Test]
         // Test one-to-many mapping
-        public void Test2()
+        public void Test32()
         {
             InitTestObjects();
 
