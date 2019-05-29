@@ -545,26 +545,33 @@ namespace Client.Query
             var condition = Expression.GreaterThanOrEqual(call1, Expression.Constant(0));
 
             var rootPropertyData = propertyList.ElementAt(0);
-            for (int i = propertyList.Count - 1; i >= 0;)
+            MethodCallExpression anyCall = null;
+            for (int i = propertyList.Count - 1; i > 0; i--)
             {
-                if (fields.Length != 2)
-                {
-                    throw new Exception("Only depth 2 supported currently");
-                }
-
                 var propertyData = propertyList.ElementAt(i);
 
                 if (propertyData.IsEnumerable)
                 {
-                    var anyCall = Expression.Call(
+                    if (anyCall == null)
+                    {
+                        anyCall = Expression.Call(
                             typeof(Enumerable),
                             nameof(Enumerable.Any),
                             new Type[] { propertyData.ParamExp.Type },
-                            rootPropertyData.MemberExp, // test more depths
+                            propertyList.ElementAt(i - 1).MemberExp,
                             Expression.Lambda(condition, propertyData.ParamExp)
                         );
-
-                    predicate = Expression.Lambda<Func<TEntity, bool>>(anyCall, rootPropertyData.ParamExp);
+                    }
+                    else
+                    {
+                        anyCall = Expression.Call(
+                            typeof(Enumerable),
+                            nameof(Enumerable.Any),
+                            new Type[] { propertyData.ParamExp.Type },
+                            propertyList.ElementAt(i - 1).MemberExp,
+                            Expression.Lambda(anyCall, propertyData.ParamExp)
+                        );
+                    }
                 }
                 else
                 {
@@ -572,12 +579,12 @@ namespace Client.Query
                     {
                         throw new Exception("Handling non-numerable non-root types not supported yet");
                     }
-
-                    predicate = Expression.Lambda<Func<TEntity, bool>>(condition, rootPropertyData.ParamExp);
                 }
-
-                break;
             }
+
+            predicate = anyCall != null
+                ? Expression.Lambda<Func<TEntity, bool>>(anyCall, rootPropertyData.ParamExp)
+                : Expression.Lambda<Func<TEntity, bool>>(condition, rootPropertyData.ParamExp);
 
             /*
             if (isEnum)
