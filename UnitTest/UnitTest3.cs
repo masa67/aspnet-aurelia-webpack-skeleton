@@ -27,6 +27,12 @@ namespace UnitTest
     public class ContactPerson
     {
         public string Name { get; set; }
+        public List<PhoneNumber> PhoneNumbers { get; set; }
+    }
+
+    public class PhoneNumber
+    {
+        public string Value { get; set; }
     }
 
     public class Test3
@@ -42,8 +48,21 @@ namespace UnitTest
             };
 
             var contactPersons = new List<ContactPerson>();
-            contactPersons.Add(new ContactPerson { Name = "John" });
-            contactPersons.Add(new ContactPerson { Name = "Jane" });
+            contactPersons.Add(new ContactPerson
+            {
+                Name = "John",
+                PhoneNumbers = new List<PhoneNumber>() {
+                    new PhoneNumber() { Value = "123" },
+                    new PhoneNumber() { Value = "456" }
+                }
+            });
+            contactPersons.Add(new ContactPerson
+            {
+                Name = "Jane",
+                PhoneNumbers = new List<PhoneNumber>() {
+                    new PhoneNumber() { Value = "999" }
+                }
+            });
 
             testObjects[0].ContactPersons = contactPersons;
 
@@ -120,7 +139,7 @@ namespace UnitTest
             );
 
             var condition = Expression.GreaterThanOrEqual(call1, Expression.Constant(0));
-            
+
             var anyCall = Expression.Call(
                 typeof(Enumerable),
                 nameof(Enumerable.Any),
@@ -143,7 +162,73 @@ namespace UnitTest
             Assert.Pass();
         }
 
+        [Test]
+        // Test one-to-many-to-many mapping
         public void Test33()
+        {
+            InitTestObjects();
+
+            IQueryable<Customer> queryableTestObjects = testObjects.AsQueryable();
+
+            var queryString = "[ { \"property\":\"ContactPersons.PhoneNumbers\", \"operator\":\"Contains\", \"value\":\"999\" } ]";
+
+            var query = QueryHelper.GetQuery(queryString);
+
+            var param1 = Expression.Parameter(typeof(Customer), "o");
+            var property1 = Expression.Property(param1, "ContactPersons");
+
+            var listItemType = property1.Type.GetProperty("Item").PropertyType;
+            var property2 = listItemType.GetProperty("PhoneNumbers");
+
+            var param2 = Expression.Parameter(listItemType, "p");
+            var property2Exp = Expression.Property(param2, "PhoneNumbers");
+
+            var listItemType2 = property2Exp.Type.GetProperty("Item").PropertyType;
+            var property3 = listItemType2.GetProperty("Value");
+            var param3 = Expression.Parameter(listItemType2, "n");
+
+            var call1 = Expression.Call(
+                Expression.Property(param3, property3),
+                typeof(String).GetMethod("IndexOf", new Type[] { typeof(String), typeof(StringComparison) }),
+                    new Expression[] {
+                        Expression.Constant("999"),
+                        Expression.Constant(StringComparison.OrdinalIgnoreCase)
+                    }
+            );
+
+            var condition = Expression.GreaterThanOrEqual(call1, Expression.Constant(0));
+
+            var anyCall = Expression.Call(
+                typeof(Enumerable),
+                nameof(Enumerable.Any),
+                new Type[] { param3.Type },
+                property2Exp,
+                Expression.Lambda(condition, param3)
+            );
+
+            var anyCall2 = Expression.Call(
+                typeof(Enumerable),
+                nameof(Enumerable.Any),
+                new Type[] { param2.Type },
+                property1,
+                Expression.Lambda(anyCall, param2)
+            );
+
+            Expression<Func<Customer, bool>> predicate = Expression.Lambda<Func<Customer, bool>>(anyCall2, param1);
+            //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
+
+            var result = queryableTestObjects.Where(predicate).ToList();
+
+            // The above is the same as this:
+            //var result = queryableTestObjects.Where(o => o.ContactPersons.Any(p => p.PhoneNumbers.Any(n => n.Value.Contains("999")))).ToList();
+
+            Assert.IsTrue(result.Count == 1);
+            Assert.IsTrue(result[0].Name == "Company1");
+
+            Assert.Pass();
+        }
+
+        public void Test4()
         {
             InitTestObjects();
 
