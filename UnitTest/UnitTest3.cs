@@ -222,7 +222,7 @@ namespace UnitTest
 
             IQueryable<Customer> queryableTestObjects = testObjects.AsQueryable();
 
-            var queryString = "[ { \"property\":\"ContactPersons.PhoneNumbers\", \"operator\":\"Contains\", \"value\":\"999\" } ]";
+            var queryString = "[ { \"property\":\"ContactPersons.PhoneNumbers.Value\", \"operator\":\"Contains\", \"value\":\"999\" } ]";
 
             var query = QueryHelper.GetQuery(queryString);
 

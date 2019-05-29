@@ -458,19 +458,68 @@ namespace Client.Query
             return predicate;
         }
 
+        private class PropertyData
+        {
+            public bool IsEnumerable { get; }
+            public ParameterExpression ParamExp { get; }
+            public MemberExpression MemberExp { get; }
+
+            public PropertyData(bool isEnumerable, ParameterExpression paramExp, MemberExpression memberExp)
+            {
+                IsEnumerable = isEnumerable;
+                ParamExp = paramExp;
+                MemberExp = memberExp;
+            }
+        }
+
         public static Expression<Func<TEntity, bool>> GeneratePropertyFilter<TEntity>(string property, string value)
         {
             Expression<Func<TEntity, bool>> predicate = null;
+            var propertyList = new List<PropertyData>();
 
             var fields = property.Split(".");
 
+            PropertyData propData = null;
+            PropertyInfo propertyInfo = null;
+            for (int i = 0; i < fields.Length; i++)
+            {
+                ParameterExpression paramExp;
+                MemberExpression memberExp;
+                bool isEnumberable;
+
+                if (propData == null || !propData.IsEnumerable)
+                {
+                    if (i == fields.Length - 1)
+                        break;
+
+                    paramExp = Expression.Parameter(i == 0 ? typeof(TEntity) : propData.MemberExp.Type, "x" + i.ToString());
+                    memberExp = Expression.Property(paramExp, fields[i]);
+                    isEnumberable = memberExp.Type.GetInterface(nameof(IEnumerable)) != null;
+                }
+                else
+                {
+                    var enumerableItemType = propData.MemberExp.Type.GetProperty("Item").PropertyType;
+                    propertyInfo = enumerableItemType.GetProperty(fields[i]);
+                    paramExp = Expression.Parameter(enumerableItemType, "x" + i.ToString());
+                    memberExp = Expression.Property(paramExp, propertyInfo);
+                    isEnumberable = memberExp.Type.GetInterface(nameof(IEnumerable)) != null;
+                }
+
+                propData = new PropertyData(isEnumberable, paramExp, memberExp);
+                propertyList.Add(propData);
+            }
+
+            var fieldProperty = propData.IsEnumerable
+                ? Expression.Property(propData.ParamExp, propertyInfo)
+                : Expression.Property(propData.MemberExp, fields[fields.Length - 1]);
+
+            /*
             var param1Exp = Expression.Parameter(typeof(TEntity), "x");
             var property1Exp = Expression.Property(param1Exp, fields[0]);
 
-            bool isEnumerable = property1Exp.Type.GetInterface(nameof(IEnumerable)) != null;
-            MemberExpression fieldProperty;
+            bool isEnum = property1Exp.Type.GetInterface(nameof(IEnumerable)) != null;
             ParameterExpression param2Exp = null;
-            if (isEnumerable)
+            if (isEnum)
             {
                 var enumerableItemType = property1Exp.Type.GetProperty("Item").PropertyType;
                 var property2 = enumerableItemType.GetProperty(fields[1]);
@@ -482,6 +531,7 @@ namespace Client.Query
             {
                 fieldProperty = Expression.Property(property1Exp, fields[1]);
             }
+            */
 
             var call1 = Expression.Call(
                 fieldProperty,
@@ -494,7 +544,43 @@ namespace Client.Query
 
             var condition = Expression.GreaterThanOrEqual(call1, Expression.Constant(0));
 
-            if (isEnumerable)
+            var rootPropertyData = propertyList.ElementAt(0);
+            for (int i = propertyList.Count - 1; i >= 0;)
+            {
+                if (fields.Length != 2)
+                {
+                    throw new Exception("Only depth 2 supported currently");
+                }
+
+                var propertyData = propertyList.ElementAt(i);
+
+                if (propertyData.IsEnumerable)
+                {
+                    var anyCall = Expression.Call(
+                            typeof(Enumerable),
+                            nameof(Enumerable.Any),
+                            new Type[] { propertyData.ParamExp.Type },
+                            rootPropertyData.MemberExp, // test more depths
+                            Expression.Lambda(condition, propertyData.ParamExp)
+                        );
+
+                    predicate = Expression.Lambda<Func<TEntity, bool>>(anyCall, rootPropertyData.ParamExp);
+                }
+                else
+                {
+                    if (i != 0)
+                    {
+                        throw new Exception("Handling non-numerable non-root types not supported yet");
+                    }
+
+                    predicate = Expression.Lambda<Func<TEntity, bool>>(condition, rootPropertyData.ParamExp);
+                }
+
+                break;
+            }
+
+            /*
+            if (isEnum)
             {
                 var anyCall = Expression.Call(
                     typeof(Enumerable),
@@ -510,6 +596,7 @@ namespace Client.Query
             {
                 predicate = Expression.Lambda<Func<TEntity, bool>>(condition, param1Exp);
             }
+            */
 
             return predicate;
         }
