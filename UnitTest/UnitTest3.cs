@@ -38,6 +38,8 @@ namespace UnitTest
             contactPersons.Add(new ContactPerson { Name = "Jane" });
 
             testObjects[0].ContactPersons = contactPersons;
+
+            testObjects[1].ContactPersons = new List<ContactPerson>();
         }
 
         [Test]
@@ -66,7 +68,7 @@ namespace UnitTest
 
             //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
 
-            var result = queryableTestObjects.Where(o => o.ContactPersons != null && o.ContactPersons.Any(p => p.Name.Contains("Jane"))).ToList();
+            var result = queryableTestObjects.Where(o => o.ContactPersons.Any(p => p.Name.Contains("Jane"))).ToList();
 
             Assert.IsTrue(result.Count == 1);
             Assert.IsTrue(result[0].Name == "Company1");
