@@ -53,18 +53,10 @@ namespace UnitTest
 
             var query = QueryHelper.GetQuery(queryString);
 
-            /*
-            var predicate = PredicateBuilder.True<Customer>();
 
-            var entityType = typeof(Customer);
 
-            var entityProperty = entityType.GetProperty("ContactPersons", BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
 
-            var parameter = Expression.Parameter(, "entity");
-            Expression<Func<Customer, bool>> exp = Expression.Lambda<Func<Customer, bool>>(expression, parameter);
 
-            predicate = predicate.And(exp);
-            */
 
             //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
 
