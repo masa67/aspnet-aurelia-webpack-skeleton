@@ -460,13 +460,31 @@ namespace Client.Query
 
         public static Expression<Func<TEntity, bool>> GeneratePropertyFilter<TEntity>(string property, string value)
         {
+            Expression<Func<TEntity, bool>> predicate = null;
+
             var fields = property.Split(".");
 
-            var param1 = Expression.Parameter(typeof(TEntity), "x");
-            var property1 = Expression.Property(param1, fields[0]);
+            var param1Exp = Expression.Parameter(typeof(TEntity), "x");
+            var property1Exp = Expression.Property(param1Exp, fields[0]);
+
+            bool isEnumerable = property1Exp.Type.GetInterface(nameof(IEnumerable)) != null;
+            MemberExpression fieldProperty;
+            ParameterExpression param2Exp = null;
+            if (isEnumerable)
+            {
+                var enumerableItemType = property1Exp.Type.GetProperty("Item").PropertyType;
+                var property2 = enumerableItemType.GetProperty(fields[1]);
+                param2Exp = Expression.Parameter(enumerableItemType, "x2");
+
+                fieldProperty = Expression.Property(param2Exp, property2);
+            }
+            else
+            {
+                fieldProperty = Expression.Property(property1Exp, fields[1]);
+            }
 
             var call1 = Expression.Call(
-                Expression.Property(property1, fields[1]),
+                fieldProperty,
                 typeof(String).GetMethod("IndexOf", new Type[] { typeof(String), typeof(StringComparison) }),
                     new Expression[] {
                         Expression.Constant(value),
@@ -476,7 +494,22 @@ namespace Client.Query
 
             var condition = Expression.GreaterThanOrEqual(call1, Expression.Constant(0));
 
-            Expression<Func<TEntity, bool>> predicate = Expression.Lambda<Func<TEntity, bool>>(condition, param1);
+            if (isEnumerable)
+            {
+                var anyCall = Expression.Call(
+                    typeof(Enumerable),
+                    nameof(Enumerable.Any),
+                    new Type[] { param2Exp.Type },
+                    property1Exp,
+                    Expression.Lambda(condition, param2Exp)
+                );
+
+                predicate = Expression.Lambda<Func<TEntity, bool>>(anyCall, param1Exp);
+            }
+            else
+            {
+                predicate = Expression.Lambda<Func<TEntity, bool>>(condition, param1Exp);
+            }
 
             return predicate;
         }
