@@ -395,6 +395,32 @@ namespace UnitTest
             Assert.Pass();
         }
 
+        [Test]
+        // Test one-to-many-to-one-to-many mapping: same as Test34 except property filter generation moved to QueryHelper
+        public void Test34B()
+        {
+            InitTestObjects();
+
+            IQueryable<Customer> queryableTestObjects = testObjects.AsQueryable();
+
+            var queryString = "[ { \"property\":\"ContactPersons.RoleGroup.Roles.Value\", \"operator\":\"Contains\", \"value\":\"admin\" } ]";
+
+            var query = QueryHelper.GetQuery(queryString);
+
+            var predicate = QueryHelper.GeneratePropertyFilter<Customer>("ContactPersons.RoleGroup.Roles.Value", "admin");
+            //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
+
+            var result = queryableTestObjects.Where(predicate).ToList();
+
+            // The above is the same as this:
+            //var result = queryableTestObjects.Where(o => o.ContactPersons.Any(p => p.RoleGroup.Roles.Any(r => r.Contains("admin")))).ToList();
+
+            Assert.IsTrue(result.Count == 1);
+            Assert.IsTrue(result[0].Name == "Company1");
+
+            Assert.Pass();
+        }
+
         public void Test4()
         {
             InitTestObjects();

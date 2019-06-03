@@ -493,7 +493,14 @@ namespace Client.Query
                         break;
 
                     paramExp = Expression.Parameter(i == 0 ? typeof(TEntity) : propData.MemberExp.Type, "x" + i.ToString());
-                    memberExp = Expression.Property(paramExp, fields[i]);
+                    if (propData != null)
+                    {
+                        memberExp = Expression.Property(propData.MemberExp, fields[i]);
+                    }
+                    else
+                    {
+                        memberExp = Expression.Property(paramExp, fields[i]);
+                    }
                     isEnumberable = memberExp.Type.GetInterface(nameof(IEnumerable)) != null;
                 }
                 else
@@ -549,8 +556,9 @@ namespace Client.Query
             for (int i = propertyList.Count - 1; i > 0; i--)
             {
                 var propertyData = propertyList.ElementAt(i);
+                var parentPropertyData = propertyList.ElementAt(i - 1);
 
-                if (propertyData.IsEnumerable)
+                if (parentPropertyData.IsEnumerable)
                 {
                     if (anyCall == null)
                     {
@@ -571,13 +579,6 @@ namespace Client.Query
                             propertyList.ElementAt(i - 1).MemberExp,
                             Expression.Lambda(anyCall, propertyData.ParamExp)
                         );
-                    }
-                }
-                else
-                {
-                    if (i != 0)
-                    {
-                        throw new Exception("Handling non-numerable non-root types not supported yet");
                     }
                 }
             }
