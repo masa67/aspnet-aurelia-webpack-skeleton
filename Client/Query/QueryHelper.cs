@@ -520,26 +520,6 @@ namespace Client.Query
                 ? Expression.Property(propData.ParamExp, propertyInfo)
                 : Expression.Property(propData.MemberExp, fields[fields.Length - 1]);
 
-            /*
-            var param1Exp = Expression.Parameter(typeof(TEntity), "x");
-            var property1Exp = Expression.Property(param1Exp, fields[0]);
-
-            bool isEnum = property1Exp.Type.GetInterface(nameof(IEnumerable)) != null;
-            ParameterExpression param2Exp = null;
-            if (isEnum)
-            {
-                var enumerableItemType = property1Exp.Type.GetProperty("Item").PropertyType;
-                var property2 = enumerableItemType.GetProperty(fields[1]);
-                param2Exp = Expression.Parameter(enumerableItemType, "x2");
-
-                fieldProperty = Expression.Property(param2Exp, property2);
-            }
-            else
-            {
-                fieldProperty = Expression.Property(property1Exp, fields[1]);
-            }
-            */
-
             var call1 = Expression.Call(
                 fieldProperty,
                 typeof(String).GetMethod("IndexOf", new Type[] { typeof(String), typeof(StringComparison) }),
@@ -586,25 +566,6 @@ namespace Client.Query
             predicate = anyCall != null
                 ? Expression.Lambda<Func<TEntity, bool>>(anyCall, rootPropertyData.ParamExp)
                 : Expression.Lambda<Func<TEntity, bool>>(condition, rootPropertyData.ParamExp);
-
-            /*
-            if (isEnum)
-            {
-                var anyCall = Expression.Call(
-                    typeof(Enumerable),
-                    nameof(Enumerable.Any),
-                    new Type[] { param2Exp.Type },
-                    property1Exp,
-                    Expression.Lambda(condition, param2Exp)
-                );
-
-                predicate = Expression.Lambda<Func<TEntity, bool>>(anyCall, param1Exp);
-            }
-            else
-            {
-                predicate = Expression.Lambda<Func<TEntity, bool>>(condition, param1Exp);
-            }
-            */
 
             return predicate;
         }
