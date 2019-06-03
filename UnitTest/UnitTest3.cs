@@ -27,10 +27,21 @@ namespace UnitTest
     public class ContactPerson
     {
         public string Name { get; set; }
+        public RoleGroup  RoleGroup { get; set; }
         public List<PhoneNumber> PhoneNumbers { get; set; }
     }
 
     public class PhoneNumber
+    {
+        public string Value { get; set; }
+    }
+
+    public class RoleGroup
+    {
+        public List<RoleValue> Roles { get; set; }
+    }
+
+    public class RoleValue
     {
         public string Value { get; set; }
     }
@@ -54,6 +65,10 @@ namespace UnitTest
                 PhoneNumbers = new List<PhoneNumber>() {
                     new PhoneNumber() { Value = "123" },
                     new PhoneNumber() { Value = "456" }
+                },
+                RoleGroup = new RoleGroup()
+                {
+                    Roles = new List<RoleValue>() { new RoleValue { Value = "editor" }, new RoleValue { Value = "author" } }
                 }
             });
             contactPersons.Add(new ContactPerson
@@ -61,6 +76,10 @@ namespace UnitTest
                 Name = "Jane",
                 PhoneNumbers = new List<PhoneNumber>() {
                     new PhoneNumber() { Value = "999" }
+                },
+                RoleGroup = new RoleGroup()
+                {
+                    Roles = new List<RoleValue> { new RoleValue { Value = "admin" }, new RoleValue { Value = "editor" } }
                 }
             });
 
@@ -299,6 +318,76 @@ namespace UnitTest
 
             // The above is the same as this:
             //var result = queryableTestObjects.Where(o => o.ContactPersons.Any(p => p.PhoneNumbers.Any(n => n.Value.Contains("999")))).ToList();
+
+            Assert.IsTrue(result.Count == 1);
+            Assert.IsTrue(result[0].Name == "Company1");
+
+            Assert.Pass();
+        }
+
+        [Test]
+        // Test one-to-many-to-one-to-many mapping
+        public void Test34()
+        {
+            InitTestObjects();
+
+            IQueryable<Customer> queryableTestObjects = testObjects.AsQueryable();
+
+            var queryString = "[ { \"property\":\"ContactPersons.RoleGroup.Roles\", \"operator\":\"Contains\", \"value\":\"admin\" } ]";
+
+            var query = QueryHelper.GetQuery(queryString);
+
+            var param1 = Expression.Parameter(typeof(Customer), "o");
+            var property1 = Expression.Property(param1, "ContactPersons");
+            var listItemType = property1.Type.GetProperty("Item").PropertyType;
+
+            var param2 = Expression.Parameter(listItemType, "p");
+            var property2Exp = Expression.Property(param2, "RoleGroup");
+            var property2 = listItemType.GetProperty("RoleGroup");
+
+            var property3 = property2.PropertyType.GetProperty("Roles");
+            var property3Exp = Expression.Property(property2Exp, "Roles");
+            var listItemType3 = property3.PropertyType.GetProperty("Item").PropertyType;
+
+            var param4 = Expression.Parameter(listItemType3, "r");
+            var property4 = listItemType3.GetProperty("Value");
+
+            var expProp = Expression.Property(param4, property4);
+
+            var call1 = Expression.Call(
+                    expProp,
+                    typeof(String).GetMethod("IndexOf", new Type[] { typeof(String), typeof(StringComparison) }),
+                        new Expression[] {
+                        Expression.Constant("admin"),
+                        Expression.Constant(StringComparison.OrdinalIgnoreCase)
+                        }
+                );
+
+            var condition = Expression.GreaterThanOrEqual(call1, Expression.Constant(0));
+
+            var anyCall = Expression.Call(
+                typeof(Enumerable),
+                nameof(Enumerable.Any),
+                new Type[] { param4.Type },
+                property3Exp,
+                Expression.Lambda(condition, param4)
+            );
+
+            var anyCall2 = Expression.Call(
+                typeof(Enumerable),
+                nameof(Enumerable.Any),
+                new Type[] { param2.Type },
+                property1,
+                Expression.Lambda(anyCall, param2)
+            );
+
+            Expression<Func<Customer, bool>> predicate = Expression.Lambda<Func<Customer, bool>>(anyCall2, param1);
+            //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
+
+            var result = queryableTestObjects.Where(predicate).ToList();
+
+            // The above is the same as this:
+            //var result = queryableTestObjects.Where(o => o.ContactPersons.Any(p => p.RoleGroup.Roles.Any(r => r.Value.Contains("admin")))).ToList();
 
             Assert.IsTrue(result.Count == 1);
             Assert.IsTrue(result[0].Name == "Company1");
