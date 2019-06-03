@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
 using System.IO;
 using System.Linq;
+using System;
 
 namespace UnitTest.Navigation.EF
 {
@@ -44,6 +45,29 @@ namespace UnitTest.Navigation.EF
                 Assert.IsTrue(result[0].Name == "Company1");
 
                 Assert.Pass();
+            }
+        }
+
+        [Test]
+        public void Test10()
+        {
+            InitTest();
+
+            using (var context = new CustomerContext(_options))
+            {
+                Assert.IsFalse(QueryHelper.IsNavigationProperty<Customer>(context, "Name"));
+                Assert.IsTrue(QueryHelper.IsNavigationProperty<Customer>(context, "Address"));
+
+                try
+                {
+                    QueryHelper.IsNavigationProperty<Customer>(context, "NonExistent");
+                }
+                catch (Exception ex)
+                {
+                    Assert.Pass();
+                }
+
+                Assert.Fail();
             }
         }
     }

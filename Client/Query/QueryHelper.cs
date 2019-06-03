@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -470,6 +471,21 @@ namespace Client.Query
                 ParamExp = paramExp;
                 MemberExp = memberExp;
             }
+        }
+
+        public static bool IsNavigationProperty<TEntity>(DbContext db, string property)
+        {
+            if (typeof(TEntity).GetProperty(property) == null)
+            {
+                throw new Exception("Entity '" + typeof(TEntity).Name + "' does not have property '" + property + "'");
+            }
+
+            var navigationProperties = db.Model.GetEntityTypes()
+                .Select(t => new { t.ClrType.Name, NavigationProperties = t.GetNavigations().Select(x => x.PropertyInfo)});
+
+            return navigationProperties.Where(
+                p => p.Name == typeof(TEntity).Name && p.NavigationProperties.Any(n => n.Name == property)
+            ).FirstOrDefault() != null;
         }
 
         public static Expression<Func<TEntity, bool>> GeneratePropertyFilter<TEntity>(string property, string value)
