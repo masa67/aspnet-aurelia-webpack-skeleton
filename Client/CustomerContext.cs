@@ -30,6 +30,9 @@ namespace Client
                 Id = 2,
                 Name = "Company2",
                 NameExtension = "Company2 extension"
+            }, new Customer {
+                Id = 3,
+                Name = "Company3"
             });
 
             modelBuilder.Entity<Address>().HasData(new Address
@@ -43,6 +46,11 @@ namespace Client
                 Id = 2,
                 City = "New York",
                 CustomerId = 2
+            }, new Address
+            {
+                Id = 3,
+                City = "Tokyo",
+                CustomerId = 3
             });
 
             modelBuilder.Entity<ContactPerson>().HasData(new ContactPerson
