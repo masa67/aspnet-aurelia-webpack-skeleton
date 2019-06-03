@@ -7,9 +7,9 @@ using NUnit.Framework;
 using System.IO;
 using System.Linq;
 
-namespace UnitTest.EFCore
+namespace UnitTest.Navigation.EF
 {
-    public class UnitTest4
+    public class UTNavigationEF
     {
         private IConfigurationRoot _configuration;
         private DbContextOptions<CustomerContext> _options;

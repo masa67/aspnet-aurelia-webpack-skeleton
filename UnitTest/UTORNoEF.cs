@@ -4,7 +4,7 @@ using NUnit.Framework;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace UnitTest
+namespace UnitTest.OR.NoEF
 {
     public class TestClass
     {
@@ -13,7 +13,7 @@ namespace UnitTest
         public string PhoneMobile { get; set; }
     }
 
-    public class Test2
+    public class UTORNoEf
     {
         [Test]
         public void Test1()

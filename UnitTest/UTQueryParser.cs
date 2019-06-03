@@ -1,9 +1,9 @@
 using Client.Query;
 using NUnit.Framework;
 
-namespace Tests
+namespace UnitTest.QueryParser
 {
-    public class Tests
+    public class UTQueryParser
     {
         [SetUp]
         public void Setup()

@@ -2,13 +2,11 @@
 using Client.Query;
 using NUnit.Framework;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 
-namespace UnitTest
+namespace UnitTest.Navigation.NoEF
 {
     public class TCustomer
     {
@@ -46,7 +44,7 @@ namespace UnitTest
         public string Value { get; set; }
     }
 
-    public class Test3
+    public class UTNavigationNoEF
     {
         private List<TCustomer> testObjects;
 
