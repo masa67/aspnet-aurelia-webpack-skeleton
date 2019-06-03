@@ -12,6 +12,8 @@ namespace Client.Models
         public string Name { get; set; }
         public string NameExtension { get; set; }
 
+        public Address Address { get; set; }
+
         public virtual List<ContactPerson> ContactPersons { get; set; }
     }
 }
