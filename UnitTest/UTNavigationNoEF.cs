@@ -88,7 +88,7 @@ namespace UnitTest.Navigation.NoEF
 
         [Test]
         // Test one-to-one mapping
-        public void Test31()
+        public void Test1()
         {
             InitTestObjects();
 
@@ -127,8 +127,8 @@ namespace UnitTest.Navigation.NoEF
         }
 
         [Test]
-        // Test one-to-one mapping: same as Test31 except uses some preliminary code from QueryHelper
-        public void Test31B()
+        // Test one-to-one mapping: same as Test1 except uses some preliminary code from QueryHelper
+        public void Test1B()
         {
             InitTestObjects();
 
@@ -154,7 +154,7 @@ namespace UnitTest.Navigation.NoEF
 
         [Test]
         // Test one-to-many mapping
-        public void Test32()
+        public void Test2()
         {
             InitTestObjects();
 
@@ -206,8 +206,8 @@ namespace UnitTest.Navigation.NoEF
         }
 
         [Test]
-        // Test one-to-many mapping: same as Test32 except uses some preliminary code from QueryHelper
-        public void Test32B()
+        // Test one-to-many mapping: same as Test2 except uses some preliminary code from QueryHelper
+        public void Test2B()
         {
             InitTestObjects();
 
@@ -233,7 +233,7 @@ namespace UnitTest.Navigation.NoEF
 
         [Test]
         // Test one-to-many-to-many mapping
-        public void Test33()
+        public void Test3()
         {
             InitTestObjects();
 
@@ -298,8 +298,8 @@ namespace UnitTest.Navigation.NoEF
         }
 
         [Test]
-        // Test one-to-many-to-many mapping: same as Test33 except uses some preliminary code from QueryHelper
-        public void Test33B()
+        // Test one-to-many-to-many mapping: same as Test3 except uses some preliminary code from QueryHelper
+        public void Test3B()
         {
             InitTestObjects();
 
@@ -325,7 +325,7 @@ namespace UnitTest.Navigation.NoEF
 
         [Test]
         // Test one-to-many-to-one-to-many mapping
-        public void Test34()
+        public void Test4()
         {
             InitTestObjects();
 
@@ -394,8 +394,8 @@ namespace UnitTest.Navigation.NoEF
         }
 
         [Test]
-        // Test one-to-many-to-one-to-many mapping: same as Test34 except property filter generation moved to QueryHelper
-        public void Test34B()
+        // Test one-to-many-to-one-to-many mapping: same as Test4 except property filter generation moved to QueryHelper
+        public void Test4B()
         {
             InitTestObjects();
 

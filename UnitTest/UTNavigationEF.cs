@@ -30,7 +30,7 @@ namespace UnitTest.Navigation.EF
         }
 
         [Test]
-        public void Test41()
+        public void Test1()
         {
             InitTest();
 
