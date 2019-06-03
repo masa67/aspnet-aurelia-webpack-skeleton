@@ -10,82 +10,82 @@ using System.Reflection;
 
 namespace UnitTest
 {
-    public class Customer
+    public class TCustomer
     {
         public string Name { get; set; }
 
-        public Address Address { get; set; }
+        public TAddress Address { get; set; }
 
-        public List<ContactPerson> ContactPersons { get; set; }
+        public List<TContactPerson> ContactPersons { get; set; }
     }
 
-    public class Address
+    public class TAddress
     {
         public string City { get; set; }
     }
 
-    public class ContactPerson
+    public class TContactPerson
     {
         public string Name { get; set; }
-        public RoleGroup  RoleGroup { get; set; }
-        public List<PhoneNumber> PhoneNumbers { get; set; }
+        public TRoleGroup  RoleGroup { get; set; }
+        public List<TPhoneNumber> PhoneNumbers { get; set; }
     }
 
-    public class PhoneNumber
+    public class TPhoneNumber
     {
         public string Value { get; set; }
     }
 
-    public class RoleGroup
+    public class TRoleGroup
     {
-        public List<RoleValue> Roles { get; set; }
+        public List<TRole> Roles { get; set; }
     }
 
-    public class RoleValue
+    public class TRole
     {
         public string Value { get; set; }
     }
 
     public class Test3
     {
-        private List<Customer> testObjects;
+        private List<TCustomer> testObjects;
 
         private void InitTestObjects()
         {
-            testObjects = new List<Customer>()
+            testObjects = new List<TCustomer>()
             {
-                new Customer { Name = "Company1", Address = new Address() { City = "London" } },
-                new Customer { Name = "Company2", Address = new Address() { City = "New York" } }
+                new TCustomer { Name = "Company1", Address = new TAddress() { City = "London" } },
+                new TCustomer { Name = "Company2", Address = new TAddress() { City = "New York" } }
             };
 
-            var contactPersons = new List<ContactPerson>();
-            contactPersons.Add(new ContactPerson
+            var contactPersons = new List<TContactPerson>();
+            contactPersons.Add(new TContactPerson
             {
                 Name = "John",
-                PhoneNumbers = new List<PhoneNumber>() {
-                    new PhoneNumber() { Value = "123" },
-                    new PhoneNumber() { Value = "456" }
+                PhoneNumbers = new List<TPhoneNumber>() {
+                    new TPhoneNumber() { Value = "123" },
+                    new TPhoneNumber() { Value = "456" }
                 },
-                RoleGroup = new RoleGroup()
+                RoleGroup = new TRoleGroup()
                 {
-                    Roles = new List<RoleValue>() { new RoleValue { Value = "editor" }, new RoleValue { Value = "author" } }
+                    Roles = new List<TRole>() { new TRole { Value = "editor" }, new TRole { Value = "author" } }
                 }
             });
-            contactPersons.Add(new ContactPerson
+            contactPersons.Add(new TContactPerson
             {
                 Name = "Jane",
-                PhoneNumbers = new List<PhoneNumber>() {
-                    new PhoneNumber() { Value = "999" }
+                PhoneNumbers = new List<TPhoneNumber>() {
+                    new TPhoneNumber() { Value = "999" }
                 },
-                RoleGroup = new RoleGroup()
+                RoleGroup = new TRoleGroup()
                 {
-                    Roles = new List<RoleValue> { new RoleValue { Value = "admin" }, new RoleValue { Value = "editor" } }
+                    Roles = new List<TRole> { new TRole { Value = "admin" }, new TRole { Value = "editor" } }
                 }
             });
 
             testObjects[0].ContactPersons = contactPersons;
 
-            testObjects[1].ContactPersons = new List<ContactPerson>();
+            testObjects[1].ContactPersons = new List<TContactPerson>();
         }
 
         [Test]
@@ -94,13 +94,13 @@ namespace UnitTest
         {
             InitTestObjects();
 
-            IQueryable<Customer> queryableTestObjects = testObjects.AsQueryable();
+            IQueryable<TCustomer> queryableTestObjects = testObjects.AsQueryable();
 
             var queryString = "[ { \"property\":\"Address.City\", \"operator\":\"Contains\", \"value\":\"London\" } ]";
 
             var query = QueryHelper.GetQuery(queryString);
 
-            var param1 = Expression.Parameter(typeof(Customer), "o");
+            var param1 = Expression.Parameter(typeof(TCustomer), "o");
             var property1 = Expression.Property(param1, "Address");
 
             var call1 = Expression.Call(
@@ -114,7 +114,7 @@ namespace UnitTest
 
             var condition = Expression.GreaterThanOrEqual(call1, Expression.Constant(0));
 
-            Expression<Func<Customer, bool>> predicate = Expression.Lambda<Func<Customer, bool>>(condition, param1);
+            Expression<Func<TCustomer, bool>> predicate = Expression.Lambda<Func<TCustomer, bool>>(condition, param1);
             //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
 
             var result = queryableTestObjects.Where(predicate).ToList();
@@ -134,13 +134,13 @@ namespace UnitTest
         {
             InitTestObjects();
 
-            IQueryable<Customer> queryableTestObjects = testObjects.AsQueryable();
+            IQueryable<TCustomer> queryableTestObjects = testObjects.AsQueryable();
 
             var queryString = "[ { \"property\":\"Address.City\", \"operator\":\"Contains\", \"value\":\"London\" } ]";
 
             var query = QueryHelper.GetQuery(queryString);
 
-            var predicate = QueryHelper.GeneratePropertyFilter<Customer>("Address.City", "London");
+            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("Address.City", "London");
             //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
 
             var result = queryableTestObjects.Where(predicate).ToList();
@@ -160,13 +160,13 @@ namespace UnitTest
         {
             InitTestObjects();
 
-            IQueryable<Customer> queryableTestObjects = testObjects.AsQueryable();
+            IQueryable<TCustomer> queryableTestObjects = testObjects.AsQueryable();
 
             var queryString = "[ { \"property\":\"ContactPersons.Name\", \"operator\":\"Contains\", \"value\":\"Jane\" } ]";
 
             var query = QueryHelper.GetQuery(queryString);
 
-            var param1 = Expression.Parameter(typeof(Customer), "o");
+            var param1 = Expression.Parameter(typeof(TCustomer), "o");
             var property1 = Expression.Property(param1, "ContactPersons");
 
             var listItemType = property1.Type.GetProperty("Item").PropertyType;
@@ -193,7 +193,7 @@ namespace UnitTest
                 Expression.Lambda(condition, param2)
             );
 
-            Expression<Func<Customer, bool>> predicate = Expression.Lambda<Func<Customer, bool>>(anyCall, param1);
+            Expression<Func<TCustomer, bool>> predicate = Expression.Lambda<Func<TCustomer, bool>>(anyCall, param1);
             //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
 
             var result = queryableTestObjects.Where(predicate).ToList();
@@ -213,13 +213,13 @@ namespace UnitTest
         {
             InitTestObjects();
 
-            IQueryable<Customer> queryableTestObjects = testObjects.AsQueryable();
+            IQueryable<TCustomer> queryableTestObjects = testObjects.AsQueryable();
 
             var queryString = "[ { \"property\":\"ContactPersons.Name\", \"operator\":\"Contains\", \"value\":\"Jane\" } ]";
 
             var query = QueryHelper.GetQuery(queryString);
 
-            var predicate = QueryHelper.GeneratePropertyFilter<Customer>("ContactPersons.Name", "Jane");
+            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("ContactPersons.Name", "Jane");
             //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
 
             var result = queryableTestObjects.Where(predicate).ToList();
@@ -239,13 +239,13 @@ namespace UnitTest
         {
             InitTestObjects();
 
-            IQueryable<Customer> queryableTestObjects = testObjects.AsQueryable();
+            IQueryable<TCustomer> queryableTestObjects = testObjects.AsQueryable();
 
             var queryString = "[ { \"property\":\"ContactPersons.PhoneNumbers.Value\", \"operator\":\"Contains\", \"value\":\"999\" } ]";
 
             var query = QueryHelper.GetQuery(queryString);
 
-            var param1 = Expression.Parameter(typeof(Customer), "o");
+            var param1 = Expression.Parameter(typeof(TCustomer), "o");
             var property1 = Expression.Property(param1, "ContactPersons");
 
             var listItemType = property1.Type.GetProperty("Item").PropertyType;
@@ -285,7 +285,7 @@ namespace UnitTest
                 Expression.Lambda(anyCall, param2)
             );
 
-            Expression<Func<Customer, bool>> predicate = Expression.Lambda<Func<Customer, bool>>(anyCall2, param1);
+            Expression<Func<TCustomer, bool>> predicate = Expression.Lambda<Func<TCustomer, bool>>(anyCall2, param1);
             //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
 
             var result = queryableTestObjects.Where(predicate).ToList();
@@ -305,13 +305,13 @@ namespace UnitTest
         {
             InitTestObjects();
 
-            IQueryable<Customer> queryableTestObjects = testObjects.AsQueryable();
+            IQueryable<TCustomer> queryableTestObjects = testObjects.AsQueryable();
 
             var queryString = "[ { \"property\":\"ContactPersons.PhoneNumbers.Value\", \"operator\":\"Contains\", \"value\":\"999\" } ]";
 
             var query = QueryHelper.GetQuery(queryString);
 
-            var predicate = QueryHelper.GeneratePropertyFilter<Customer>("ContactPersons.PhoneNumbers.Value", "999");
+            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("ContactPersons.PhoneNumbers.Value", "999");
             //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
 
             var result = queryableTestObjects.Where(predicate).ToList();
@@ -331,13 +331,13 @@ namespace UnitTest
         {
             InitTestObjects();
 
-            IQueryable<Customer> queryableTestObjects = testObjects.AsQueryable();
+            IQueryable<TCustomer> queryableTestObjects = testObjects.AsQueryable();
 
             var queryString = "[ { \"property\":\"ContactPersons.RoleGroup.Roles\", \"operator\":\"Contains\", \"value\":\"admin\" } ]";
 
             var query = QueryHelper.GetQuery(queryString);
 
-            var param1 = Expression.Parameter(typeof(Customer), "o");
+            var param1 = Expression.Parameter(typeof(TCustomer), "o");
             var property1 = Expression.Property(param1, "ContactPersons");
             var listItemType = property1.Type.GetProperty("Item").PropertyType;
 
@@ -381,7 +381,7 @@ namespace UnitTest
                 Expression.Lambda(anyCall, param2)
             );
 
-            Expression<Func<Customer, bool>> predicate = Expression.Lambda<Func<Customer, bool>>(anyCall2, param1);
+            Expression<Func<TCustomer, bool>> predicate = Expression.Lambda<Func<TCustomer, bool>>(anyCall2, param1);
             //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
 
             var result = queryableTestObjects.Where(predicate).ToList();
@@ -401,13 +401,13 @@ namespace UnitTest
         {
             InitTestObjects();
 
-            IQueryable<Customer> queryableTestObjects = testObjects.AsQueryable();
+            IQueryable<TCustomer> queryableTestObjects = testObjects.AsQueryable();
 
             var queryString = "[ { \"property\":\"ContactPersons.RoleGroup.Roles.Value\", \"operator\":\"Contains\", \"value\":\"admin\" } ]";
 
             var query = QueryHelper.GetQuery(queryString);
 
-            var predicate = QueryHelper.GeneratePropertyFilter<Customer>("ContactPersons.RoleGroup.Roles.Value", "admin");
+            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("ContactPersons.RoleGroup.Roles.Value", "admin");
             //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
 
             var result = queryableTestObjects.Where(predicate).ToList();
@@ -425,12 +425,12 @@ namespace UnitTest
         {
             InitTestObjects();
 
-            IQueryable<Customer> queryableTestObjects = testObjects.AsQueryable();
+            IQueryable<TCustomer> queryableTestObjects = testObjects.AsQueryable();
 
             var queryString = "[ { \"operator\":\"AND\", \"operands\":[ { \"property\":\"Name\", \"operator\":\"Contains\", \"value\":\"Company1\" }, { \"property\":\"contactPersons.Name\", \"operator\":\"Contains\", \"value\":\"Jane\" } ] } ]";
 
             var query = QueryHelper.GetQuery(queryString);
-            var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
+            var predicate = QueryHelper.GenerateWhere<TCustomer>(query.Query);
 
             var result = queryableTestObjects.Where(predicate).ToList();
 
