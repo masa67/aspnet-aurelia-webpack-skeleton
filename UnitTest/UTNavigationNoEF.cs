@@ -142,7 +142,7 @@ namespace UnitTest.Navigation.NoEF
 
             var query = QueryHelper.GetQuery(queryString);
 
-            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("Address.City", FieldOperator.Contains, "London");
+            var predicate = QueryHelper.GenerateNavigationFilter<TCustomer>(new FieldParameter("Address.City", "London", FieldOperator.Contains));
             //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
 
             var result = queryableTestObjects.Where(predicate).ToList();
@@ -221,7 +221,7 @@ namespace UnitTest.Navigation.NoEF
 
             var query = QueryHelper.GetQuery(queryString);
 
-            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("ContactPersons.Name", FieldOperator.Contains, "Jane");
+            var predicate = QueryHelper.GenerateNavigationFilter<TCustomer>(new FieldParameter("ContactPersons.Name", "Jane", FieldOperator.Contains));
             //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
 
             var result = queryableTestObjects.Where(predicate).ToList();
@@ -313,7 +313,7 @@ namespace UnitTest.Navigation.NoEF
 
             var query = QueryHelper.GetQuery(queryString);
 
-            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("ContactPersons.PhoneNumbers.Value", FieldOperator.Contains, "999");
+            var predicate = QueryHelper.GenerateNavigationFilter<TCustomer>(new FieldParameter("ContactPersons.PhoneNumbers.Value", "999", FieldOperator.Contains));
             //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
 
             var result = queryableTestObjects.Where(predicate).ToList();
@@ -409,7 +409,7 @@ namespace UnitTest.Navigation.NoEF
 
             var query = QueryHelper.GetQuery(queryString);
 
-            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("ContactPersons.RoleGroup.Roles.Value", FieldOperator.Contains, "admin");
+            var predicate = QueryHelper.GenerateNavigationFilter<TCustomer>(new FieldParameter("ContactPersons.RoleGroup.Roles.Value", "admin", FieldOperator.Contains));
             //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
 
             var result = queryableTestObjects.Where(predicate).ToList();
@@ -430,7 +430,7 @@ namespace UnitTest.Navigation.NoEF
 
             IQueryable<TCustomer> queryableTestObjects = testObjects.AsQueryable();
 
-            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("Address.Type", FieldOperator.Eq, 1);
+            var predicate = QueryHelper.GenerateNavigationFilter<TCustomer>(new FieldParameter("Address.Type", 1, FieldOperator.Eq));
 
             var result = queryableTestObjects.Where(predicate).ToList();
 
@@ -447,7 +447,7 @@ namespace UnitTest.Navigation.NoEF
 
             IQueryable<TCustomer> queryableTestObjects = testObjects.AsQueryable();
 
-            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("ContactPersons.Type", FieldOperator.Eq, 1);
+            var predicate = QueryHelper.GenerateNavigationFilter<TCustomer>(new FieldParameter("ContactPersons.Type", 1, FieldOperator.Eq));
 
             var result = queryableTestObjects.Where(predicate).ToList();
 

@@ -37,7 +37,7 @@ namespace UnitTest.Navigation.EF
 
             using (var context = new CustomerContext(_options))
             {
-                var predicate = QueryHelper.GeneratePropertyFilter<Customer>("Address.City", FieldOperator.Contains, "London");
+                var predicate = QueryHelper.GenerateNavigationFilter<Customer>(new FieldParameter("Address.City", "London", FieldOperator.Contains));
 
                 var result = context.Customers.Where(predicate).ToList();
 

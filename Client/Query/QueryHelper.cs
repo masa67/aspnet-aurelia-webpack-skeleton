@@ -229,7 +229,18 @@ namespace Client.Query
 
             if (queryParam is FieldParameter)
             {
-                ret = GenerateFieldFilter<TEntity>(queryParam as FieldParameter);
+                var fieldParameter = queryParam as FieldParameter;
+
+                var fields = fieldParameter.Property.Split('.');
+
+                if (fields.Length > 1)
+                {
+                    ret = GenerateNavigationFilter<TEntity>(fieldParameter);
+                }
+                else
+                {
+                    ret = GenerateFieldFilter<TEntity>(fieldParameter);
+                }
             }
             else if (queryParam is LogicalParameter)
             {
@@ -498,8 +509,12 @@ namespace Client.Query
             ).FirstOrDefault() != null;
         }
 
-        public static Expression<Func<TEntity, bool>> GeneratePropertyFilter<TEntity>(string property, FieldOperator fOperator, object value)
+        public static Expression<Func<TEntity, bool>> GenerateNavigationFilter<TEntity>(FieldParameter fieldParameter)
         {
+            var property = fieldParameter.Property;
+            var fOperator = fieldParameter.Operator;
+            var value = fieldParameter.Value;
+
             Expression<Func<TEntity, bool>> predicate = null;
             var propertyList = new List<PropertyData>();
 
