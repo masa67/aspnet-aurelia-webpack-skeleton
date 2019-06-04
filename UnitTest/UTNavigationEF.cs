@@ -12,22 +12,135 @@ namespace UnitTest.Navigation.EF
 {
     public class UTNavigationEF
     {
-        private IConfigurationRoot _configuration;
         private DbContextOptions<CustomerContext> _options;
 
         private void InitTest()
         {
-            var settingsDir = Directory.GetCurrentDirectory();
-            settingsDir = Path.Combine(settingsDir, @"..\..\..\..\Client");
-
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(settingsDir)
-                .AddJsonFile("appsettings.json");
-
-            _configuration = builder.Build();
             _options = new DbContextOptionsBuilder<CustomerContext>()
-                .UseSqlServer(_configuration.GetConnectionString("Default"))
+                .UseInMemoryDatabase(Guid.NewGuid().ToString())
                 .Options;
+
+            using (var context = new CustomerContext(_options))
+            {
+                context.Customers.Add(new Customer
+                {
+                    Id = 1,
+                    Name = "Company1",
+                    NameExtension = "Company1 extension"
+                });
+
+                context.Customers.Add(new Customer
+                {
+                    Id = 2,
+                    Name = "Company2",
+                    NameExtension = "Company2 extension"
+                });
+
+                context.Customers.Add(new Customer
+                {
+                    Id = 3,
+                    Name = "Company3"
+                });
+
+                context.Addresses.Add(new Address
+                {
+                    Id = 1,
+                    City = "London",
+                    CustomerId = 1
+
+                });
+
+                context.Addresses.Add(new Address
+                {
+                    Id = 2,
+                    City = "New York",
+                    CustomerId = 2
+                });
+
+                context.Addresses.Add(new Address
+                {
+                    Id = 3,
+                    City = "Tokyo",
+                    CustomerId = 3
+                });
+
+                context.ContactPersons.Add(new ContactPerson
+                {
+                    Id = 1,
+                    Name = "John",
+                    CustomerId = 1
+                });
+
+                context.ContactPersons.Add(new ContactPerson
+                {
+                    Id = 2,
+                    Name = "Jane",
+                    CustomerId = 1
+                });
+
+                context.PhoneNumbers.Add(new PhoneNumber
+                {
+                    Id = 1,
+                    Value = "123",
+                    ContactPersonId = 1
+                });
+
+                context.PhoneNumbers.Add(new PhoneNumber
+                {
+                    Id = 2,
+                    Value = "456",
+                    ContactPersonId = 1
+                });
+
+                context.PhoneNumbers.Add(new PhoneNumber
+                {
+                    Id = 3,
+                    Value = "999",
+                    ContactPersonId = 2
+                });
+
+                context.RoleGroups.Add(new RoleGroup
+                {
+                    Id = 1,
+                    ContactPersonId = 1
+                });
+
+                context.RoleGroups.Add(new RoleGroup
+                {
+                    Id = 2,
+                    ContactPersonId = 2
+                });
+
+                context.Roles.Add(new Role
+                {
+                    Id = 1,
+                    Value = "editor",
+                    RoleGroupId = 1
+                });
+
+                context.Roles.Add(new Role
+                {
+                    Id = 2,
+                    Value = "author",
+                    RoleGroupId = 1
+                });
+
+                context.Roles.Add(new Role
+                {
+                    Id = 3,
+                    Value = "admin",
+                    RoleGroupId = 2
+                });
+
+                context.Roles.Add(new Role
+                {
+                    Id = 4,
+                    Value = "editor",
+                    RoleGroupId = 2
+                });
+
+                context.SaveChanges();
+            }
         }
 
         [Test]
