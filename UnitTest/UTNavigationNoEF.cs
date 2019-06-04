@@ -138,7 +138,7 @@ namespace UnitTest.Navigation.NoEF
 
             var query = QueryHelper.GetQuery(queryString);
 
-            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("Address.City", "London");
+            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("Address.City", FieldOperator.Contains, "London");
             //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
 
             var result = queryableTestObjects.Where(predicate).ToList();
@@ -217,7 +217,7 @@ namespace UnitTest.Navigation.NoEF
 
             var query = QueryHelper.GetQuery(queryString);
 
-            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("ContactPersons.Name", "Jane");
+            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("ContactPersons.Name", FieldOperator.Contains, "Jane");
             //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
 
             var result = queryableTestObjects.Where(predicate).ToList();
@@ -309,7 +309,7 @@ namespace UnitTest.Navigation.NoEF
 
             var query = QueryHelper.GetQuery(queryString);
 
-            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("ContactPersons.PhoneNumbers.Value", "999");
+            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("ContactPersons.PhoneNumbers.Value", FieldOperator.Contains, "999");
             //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
 
             var result = queryableTestObjects.Where(predicate).ToList();
@@ -405,7 +405,7 @@ namespace UnitTest.Navigation.NoEF
 
             var query = QueryHelper.GetQuery(queryString);
 
-            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("ContactPersons.RoleGroup.Roles.Value", "admin");
+            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("ContactPersons.RoleGroup.Roles.Value", FieldOperator.Contains, "admin");
             //var predicate = QueryHelper.GenerateWhere<Customer>(query.Query);
 
             var result = queryableTestObjects.Where(predicate).ToList();
@@ -419,7 +419,7 @@ namespace UnitTest.Navigation.NoEF
             Assert.Pass();
         }
 
-        public void Test4()
+        public void Test5()
         {
             InitTestObjects();
 

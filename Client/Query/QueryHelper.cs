@@ -248,7 +248,6 @@ namespace Client.Query
 
             var entityType = typeof(TEntity);
 
-            Expression expression;
             var entityProperty = entityType.GetProperty(property, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
 
             if (entityProperty == null)
@@ -264,7 +263,16 @@ namespace Client.Query
                 throw new Exception(message: $"Property '{property}' not found for entity '{entityType.Name}'");
             }
 
-            var fieldProperty = Expression.Property(parameter, entityProperty);
+            var propertyMember = Expression.Property(parameter, entityProperty);
+
+            var condition = GenerateFieldCondition<TEntity>(propertyMember, propertyType, fieldParameter.Operator, fieldParameter.Value);
+
+            return Expression.Lambda<Func<TEntity, bool>>(condition, parameter);
+        }
+
+        private static Expression GenerateFieldCondition<TEntity>(MemberExpression propertyMember, Type propertyType, FieldOperator fOperator, object propertyValue)
+        {
+            Expression expression;
 
             // List handling - convert JArray and each JValue to generic list of the correct type
             var jsonArray = propertyValue as IList;
@@ -304,7 +312,7 @@ namespace Client.Query
             // only value types work
             if (propertyType.IsValueType || propertyType.Equals(typeof(string)))
             {
-                switch (fieldParameter.Operator)
+                switch (fOperator)
                 {
                     case FieldOperator.Eq:
                         if (propertyValue is IList)
@@ -315,7 +323,7 @@ namespace Client.Query
                             foreach (var value in (IList)propertyValue)
                             {
                                 equalExpressions.Add(Expression.Equal(
-                                    fieldProperty,
+                                    propertyMember,
                                     Expression.Convert(Expression.Constant(value), propertyType)));
                             }
 
@@ -347,41 +355,41 @@ namespace Client.Query
                         else
                         {
                             expression = Expression.Equal(
-                                fieldProperty,
+                                propertyMember,
                                 Expression.Convert(Expression.Constant(propertyValue), propertyType));
                         }
                         break;
                     case FieldOperator.Gt:
                         // Expression: entity.Property > value
                         expression = Expression.GreaterThan(
-                            fieldProperty,
+                            propertyMember,
                             Expression.Convert(Expression.Constant(propertyValue), propertyType)
                         );
                         break;
                     case FieldOperator.Gte:
                         // Expression: entity.Property >= value
                         expression = Expression.GreaterThanOrEqual(
-                            fieldProperty,
+                            propertyMember,
                             Expression.Convert(Expression.Constant(propertyValue), propertyType)
                         );
                         break;
                     case FieldOperator.Lt:
                         // Expression: entity.Property < value
                         expression = Expression.LessThan(
-                            fieldProperty,
+                            propertyMember,
                             Expression.Convert(Expression.Constant(propertyValue), propertyType)
                         );
                         break;
                     case FieldOperator.Lte:
                         // Expression: entity.Property <= value
                         expression = Expression.LessThanOrEqual(
-                            fieldProperty,
+                            propertyMember,
                             Expression.Convert(Expression.Constant(propertyValue), propertyType)
                         );
                         break;
                     case FieldOperator.Contains:
                         expression = Expression.GreaterThanOrEqual(
-                        Expression.Call(fieldProperty,
+                        Expression.Call(propertyMember,
                         typeof(String).GetMethod("IndexOf", new Type[] { typeof(String), typeof(StringComparison) }),
                             new Expression[] {
                               Expression.Constant(propertyValue.ToString()),
@@ -392,7 +400,7 @@ namespace Client.Query
                     case FieldOperator.StartsWith:
                         // Expression: entity.Property starts with value. Ignore case
                         expression = Expression.Equal(
-                         Expression.Call(fieldProperty,
+                         Expression.Call(propertyMember,
                          typeof(String).GetMethod("StartsWith", new Type[] { typeof(String), typeof(StringComparison) }),
                              new Expression[] {
                           Expression.Constant(propertyValue.ToString()),
@@ -403,7 +411,7 @@ namespace Client.Query
                     case FieldOperator.EndsWith:
                         // Expression: entity.Property ends with value. Ignore case
                         expression = Expression.Equal(
-                            Expression.Call(fieldProperty,
+                            Expression.Call(propertyMember,
                             typeof(String).GetMethod("EndsWith", new Type[] { typeof(String), typeof(StringComparison) }),
                                 new Expression[] {
                                 Expression.Constant(propertyValue.ToString()),
@@ -412,7 +420,7 @@ namespace Client.Query
                                 ), Expression.Constant(true));
                         break;
                     default:
-                        throw new NotImplementedException($"Field operator '{fieldParameter.Operator.ToString()}' is not implemented.");
+                        throw new NotImplementedException($"Field operator '{fOperator.ToString()}' is not implemented.");
                 }
             }
             // if not, then use the key (entity)
@@ -427,7 +435,7 @@ namespace Client.Query
                 }
                 expression = Expression.Equal(
                     Expression.Property(
-                        fieldProperty,
+                        propertyMember,
                         idProperty
                     ),
                     Expression.Constant(
@@ -437,7 +445,7 @@ namespace Client.Query
                 );
             }
 
-            return Expression.Lambda<Func<TEntity, bool>>(expression, parameter);
+            return expression;
         }
 
         private static Expression<Func<TEntity, bool>> GenerateLogicalFilter<TEntity>(LogicalParameter logicalParameter)
@@ -490,7 +498,7 @@ namespace Client.Query
             ).FirstOrDefault() != null;
         }
 
-        public static Expression<Func<TEntity, bool>> GeneratePropertyFilter<TEntity>(string property, string value)
+        public static Expression<Func<TEntity, bool>> GeneratePropertyFilter<TEntity>(string property, FieldOperator fOperator, object value)
         {
             Expression<Func<TEntity, bool>> predicate = null;
             var propertyList = new List<PropertyData>();
@@ -499,16 +507,26 @@ namespace Client.Query
 
             PropertyData propData = null;
             PropertyInfo propertyInfo = null;
+            Type propertyType = null;
             for (int i = 0; i < fields.Length; i++)
             {
                 ParameterExpression paramExp;
                 MemberExpression memberExp;
-                bool isEnumberable;
+                bool isEnumerable;
+
 
                 if (propData == null || !propData.IsEnumerable)
                 {
                     if (i == fields.Length - 1)
+                    {
+                        if (propData == null)
+                        {
+                            throw new Exception("Internal failure in query logic");
+                        }
+
+                        propertyType = propData.MemberExp.Type.GetProperty(fields[i]).PropertyType;
                         break;
+                    }
 
                     paramExp = Expression.Parameter(i == 0 ? typeof(TEntity) : propData.MemberExp.Type, "x" + i.ToString());
                     if (propData != null)
@@ -519,35 +537,27 @@ namespace Client.Query
                     {
                         memberExp = Expression.Property(paramExp, fields[i]);
                     }
-                    isEnumberable = memberExp.Type.GetInterface(nameof(IEnumerable)) != null;
+                    isEnumerable = memberExp.Type.GetInterface(nameof(IEnumerable)) != null;
                 }
                 else
                 {
                     var enumerableItemType = propData.MemberExp.Type.GetProperty("Item").PropertyType;
                     propertyInfo = enumerableItemType.GetProperty(fields[i]);
+                    propertyType = propertyInfo.PropertyType;
                     paramExp = Expression.Parameter(enumerableItemType, "x" + i.ToString());
                     memberExp = Expression.Property(paramExp, propertyInfo);
-                    isEnumberable = memberExp.Type.GetInterface(nameof(IEnumerable)) != null;
+                    isEnumerable = memberExp.Type.GetInterface(nameof(IEnumerable)) != null;
                 }
 
-                propData = new PropertyData(isEnumberable, paramExp, memberExp);
+                propData = new PropertyData(isEnumerable, paramExp, memberExp);
                 propertyList.Add(propData);
             }
 
-            var fieldProperty = propData.IsEnumerable
+            var propertyMember = propData.IsEnumerable
                 ? Expression.Property(propData.ParamExp, propertyInfo)
                 : Expression.Property(propData.MemberExp, fields[fields.Length - 1]);
 
-            var call1 = Expression.Call(
-                fieldProperty,
-                typeof(String).GetMethod("IndexOf", new Type[] { typeof(String), typeof(StringComparison) }),
-                    new Expression[] {
-                        Expression.Constant(value),
-                        Expression.Constant(StringComparison.OrdinalIgnoreCase)
-                    }
-            );
-
-            var condition = Expression.GreaterThanOrEqual(call1, Expression.Constant(0));
+            var condition = GenerateFieldCondition<TEntity>(propertyMember, propertyType, fOperator, value);
 
             var rootPropertyData = propertyList.ElementAt(0);
             MethodCallExpression anyCall = null;
