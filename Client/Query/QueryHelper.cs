@@ -90,17 +90,25 @@ namespace Client.Query
 
         */
 
-        public static QueryParserResult GetQuery(string queryJson)
+        public static QueryParserResult GetQuery(string jsonString)
         {
             var ret = new QueryParserResult();
             ret.Success = false;
 
-            dynamic jsonObject = JsonConvert.DeserializeObject(queryJson);
+            dynamic jsonObject = JsonConvert.DeserializeObject(jsonString);
             if (jsonObject == null)
             {
                 ret.ErrorMessage = "invalid json";
                 return ret;
             }
+
+            return GetQuery(jsonObject);
+        }
+
+        public static QueryParserResult GetQuery(dynamic jsonObject)
+        {
+            var ret = new QueryParserResult();
+            ret.Success = false;
 
             if (jsonObject.Type != Newtonsoft.Json.Linq.JTokenType.Array)
             {

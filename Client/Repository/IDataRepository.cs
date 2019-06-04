@@ -9,6 +9,7 @@ namespace Client.Repository
     {
         IEnumerable<TEntity> GetAll();
         TEntity Get(long id);
+        IEnumerable<TEntity> Query(Client.Query.Query query);
         void Add(TEntity entity);
         void Update(TEntity dbEntity, TEntity entity);
         void Delete(TEntity entity);

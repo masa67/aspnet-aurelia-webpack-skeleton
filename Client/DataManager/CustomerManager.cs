@@ -1,4 +1,5 @@
 ﻿using Client.Models;
+using Client.Query;
 using Client.Repository;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -25,6 +26,13 @@ namespace Client.DataManager
             return _customerContext.Customers
                 .Include(c => c.ContactPersons)
                 .FirstOrDefault(e => e.Id == id);
+        }
+
+        public IEnumerable<Customer> Query(Client.Query.Query query)
+        {
+            var predicate = QueryHelper.GenerateWhere<Customer>(query);
+
+            return _customerContext.Customers.Where(predicate).ToList();
         }
 
         public void Add(Customer entity)

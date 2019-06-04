@@ -1,4 +1,5 @@
 ﻿using Client.Models;
+using Client.Query;
 using Client.Repository;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -52,6 +53,15 @@ namespace Client.Controllers
                   "Get",
                   new { Id = customer.Id },
                   customer);
+        }
+
+        [HttpPost("query")]
+        public IActionResult Query([FromBody] QueryDto query)
+        {
+            var parsedQuery = QueryHelper.GetQuery(query.Parameters);
+
+            var result = _dataRepository.Query(parsedQuery.Query);
+            return Ok(result);
         }
 
         // PUT: api/Customer/5

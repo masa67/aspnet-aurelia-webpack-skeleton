@@ -1,5 +1,6 @@
 ﻿using Client.Models;
 using Client.Repository;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -23,6 +24,11 @@ namespace Client.DataManager
         {
             return _customerContext.ContactPersons
                   .FirstOrDefault(e => e.Id == id);
+        }
+
+        public IEnumerable<ContactPerson> Query(Client.Query.Query query)
+        {
+            throw new Exception("Method not supported.");
         }
 
         public void Add(ContactPerson entity)
