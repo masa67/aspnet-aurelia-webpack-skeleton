@@ -457,7 +457,7 @@ namespace UnitTest.Navigation.NoEF
             Assert.Pass();
         }
 
-
+        [Test]
         public void Test100()
         {
             InitTestObjects();
