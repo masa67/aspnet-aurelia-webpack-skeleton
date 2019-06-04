@@ -264,6 +264,8 @@ namespace Client.Query
                 throw new Exception(message: $"Property '{property}' not found for entity '{entityType.Name}'");
             }
 
+            var fieldProperty = Expression.Property(parameter, entityProperty);
+
             // List handling - convert JArray and each JValue to generic list of the correct type
             var jsonArray = propertyValue as IList;
             if (jsonArray != null)
@@ -313,7 +315,7 @@ namespace Client.Query
                             foreach (var value in (IList)propertyValue)
                             {
                                 equalExpressions.Add(Expression.Equal(
-                                    Expression.Property(parameter, entityProperty),
+                                    fieldProperty,
                                     Expression.Convert(Expression.Constant(value), propertyType)));
                             }
 
@@ -345,41 +347,41 @@ namespace Client.Query
                         else
                         {
                             expression = Expression.Equal(
-                                Expression.Property(parameter, entityProperty),
+                                fieldProperty,
                                 Expression.Convert(Expression.Constant(propertyValue), propertyType));
                         }
                         break;
                     case FieldOperator.Gt:
                         // Expression: entity.Property > value
                         expression = Expression.GreaterThan(
-                            Expression.Property(parameter, entityProperty),
+                            fieldProperty,
                             Expression.Convert(Expression.Constant(propertyValue), propertyType)
                         );
                         break;
                     case FieldOperator.Gte:
                         // Expression: entity.Property >= value
                         expression = Expression.GreaterThanOrEqual(
-                            Expression.Property(parameter, entityProperty),
+                            fieldProperty,
                             Expression.Convert(Expression.Constant(propertyValue), propertyType)
                         );
                         break;
                     case FieldOperator.Lt:
                         // Expression: entity.Property < value
                         expression = Expression.LessThan(
-                            Expression.Property(parameter, entityProperty),
+                            fieldProperty,
                             Expression.Convert(Expression.Constant(propertyValue), propertyType)
                         );
                         break;
                     case FieldOperator.Lte:
                         // Expression: entity.Property <= value
                         expression = Expression.LessThanOrEqual(
-                            Expression.Property(parameter, entityProperty),
+                            fieldProperty,
                             Expression.Convert(Expression.Constant(propertyValue), propertyType)
                         );
                         break;
                     case FieldOperator.Contains:
                         expression = Expression.GreaterThanOrEqual(
-                        Expression.Call(Expression.Property(parameter, entityProperty),
+                        Expression.Call(fieldProperty,
                         typeof(String).GetMethod("IndexOf", new Type[] { typeof(String), typeof(StringComparison) }),
                             new Expression[] {
                               Expression.Constant(propertyValue.ToString()),
@@ -390,7 +392,7 @@ namespace Client.Query
                     case FieldOperator.StartsWith:
                         // Expression: entity.Property starts with value. Ignore case
                         expression = Expression.Equal(
-                         Expression.Call(Expression.Property(parameter, entityProperty),
+                         Expression.Call(fieldProperty,
                          typeof(String).GetMethod("StartsWith", new Type[] { typeof(String), typeof(StringComparison) }),
                              new Expression[] {
                           Expression.Constant(propertyValue.ToString()),
@@ -401,7 +403,7 @@ namespace Client.Query
                     case FieldOperator.EndsWith:
                         // Expression: entity.Property ends with value. Ignore case
                         expression = Expression.Equal(
-                            Expression.Call(Expression.Property(parameter, entityProperty),
+                            Expression.Call(fieldProperty,
                             typeof(String).GetMethod("EndsWith", new Type[] { typeof(String), typeof(StringComparison) }),
                                 new Expression[] {
                                 Expression.Constant(propertyValue.ToString()),
@@ -425,7 +427,7 @@ namespace Client.Query
                 }
                 expression = Expression.Equal(
                     Expression.Property(
-                        Expression.Property(parameter, entityProperty),
+                        fieldProperty,
                         idProperty
                     ),
                     Expression.Constant(
