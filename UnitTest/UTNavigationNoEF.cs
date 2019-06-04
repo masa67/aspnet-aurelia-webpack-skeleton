@@ -20,11 +20,13 @@ namespace UnitTest.Navigation.NoEF
     public class TAddress
     {
         public string City { get; set; }
+        public int Type { get; set; }
     }
 
     public class TContactPerson
     {
         public string Name { get; set; }
+        public int Type { get; set; }
         public TRoleGroup  RoleGroup { get; set; }
         public List<TPhoneNumber> PhoneNumbers { get; set; }
     }
@@ -52,14 +54,15 @@ namespace UnitTest.Navigation.NoEF
         {
             testObjects = new List<TCustomer>()
             {
-                new TCustomer { Name = "Company1", Address = new TAddress() { City = "London" } },
-                new TCustomer { Name = "Company2", Address = new TAddress() { City = "New York" } }
+                new TCustomer { Name = "Company1", Address = new TAddress() { City = "London", Type = 0 } },
+                new TCustomer { Name = "Company2", Address = new TAddress() { City = "New York", Type = 1 } }
             };
 
             var contactPersons = new List<TContactPerson>();
             contactPersons.Add(new TContactPerson
             {
                 Name = "John",
+                Type = 0,
                 PhoneNumbers = new List<TPhoneNumber>() {
                     new TPhoneNumber() { Value = "123" },
                     new TPhoneNumber() { Value = "456" }
@@ -72,6 +75,7 @@ namespace UnitTest.Navigation.NoEF
             contactPersons.Add(new TContactPerson
             {
                 Name = "Jane",
+                Type = 1,
                 PhoneNumbers = new List<TPhoneNumber>() {
                     new TPhoneNumber() { Value = "999" }
                 },
@@ -419,7 +423,42 @@ namespace UnitTest.Navigation.NoEF
             Assert.Pass();
         }
 
+        [Test]
         public void Test5()
+        {
+            InitTestObjects();
+
+            IQueryable<TCustomer> queryableTestObjects = testObjects.AsQueryable();
+
+            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("Address.Type", FieldOperator.Eq, 1);
+
+            var result = queryableTestObjects.Where(predicate).ToList();
+
+            Assert.IsTrue(result.Count == 1);
+            Assert.IsTrue(result[0].Name == "Company2");
+
+            Assert.Pass();
+        }
+
+        [Test]
+        public void Test6()
+        {
+            InitTestObjects();
+
+            IQueryable<TCustomer> queryableTestObjects = testObjects.AsQueryable();
+
+            var predicate = QueryHelper.GeneratePropertyFilter<TCustomer>("ContactPersons.Type", FieldOperator.Eq, 1);
+
+            var result = queryableTestObjects.Where(predicate).ToList();
+
+            Assert.IsTrue(result.Count == 1);
+            Assert.IsTrue(result[0].Name == "Company1");
+
+            Assert.Pass();
+        }
+
+
+        public void Test100()
         {
             InitTestObjects();
 

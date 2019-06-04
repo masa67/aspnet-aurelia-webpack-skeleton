@@ -553,7 +553,7 @@ namespace Client.Query
                 propertyList.Add(propData);
             }
 
-            var propertyMember = propData.IsEnumerable
+            var propertyMember = propertyList.ElementAt(fields.Length - 2).IsEnumerable
                 ? Expression.Property(propData.ParamExp, propertyInfo)
                 : Expression.Property(propData.MemberExp, fields[fields.Length - 1]);
 
