@@ -15,8 +15,8 @@ namespace Client
         public DbSet<ContactPerson> ContactPersons { get; set; }
         public DbSet<Customer> Customers { get; set; }
         public DbSet<PhoneNumber> PhoneNumbers { get; set; }
-        public DbSet<Role> Role { get; set; }
-        public DbSet<RoleGroup> RoleGroup { get; set; }
+        public DbSet<Role> Roles { get; set; }
+        public DbSet<RoleGroup> RoleGroups { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
