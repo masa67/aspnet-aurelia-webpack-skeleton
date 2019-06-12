@@ -53,6 +53,8 @@ namespace Client
             app.UseStaticFiles();
             app.UseMvc(routes =>
             {
+                routes.Select().Expand().Filter().OrderBy().MaxTop(100).Count();
+
                 routes.MapODataServiceRoute("odata", "odata", GetEdmModel());
 
                 routes.MapRoute(
